@@ -1,46 +1,70 @@
-import { useState, ChangeEvent, FormEvent, useEffect } from "react";
-import * as d3 from "d3";
-
-function Chart() {
-  useEffect(() => {
-    function drawChart() {
-      const data = [12, 5, 6, 6, 9, 10];
-
-      const svg = d3
-        .select("body")
-        .append("svg")
-        .attr("width", 700)
-        .attr("height", 300);
-
-      svg
-        .selectAll("rect")
-        .data(data)
-        .enter()
-        .append("rect")
-        .attr("x", (d, i) => i * 70)
-        .attr("y", (d, i) => 300 - 10 * d)
-        .attr("width", 65)
-        .attr("height", (d, i) => d * 10)
-        .attr("fill", "green");
-
-      svg
-        .selectAll("text")
-        .data(data)
-        .enter()
-        .append("text")
-        .text((d) => d)
-        .attr("x", (d, i) => i * 70)
-        .attr("y", (d, i) => 300 - 10 * d - 3);
-    }
-
-    drawChart();
-  }, []);
-
-  return <div id={"#"}></div>;
-}
+// import Interpreter from "js-interpreter";
+// import Interpreter from "../utils/interpreter";
+import { getInterpreter } from "../utils/test";
+import { MouseEvent, useEffect, useState } from "react";
 
 function App() {
-  return <Chart />;
+  const [myInterpreter, setMyInterpreter] = useState<any>(null);
+
+  const code = `
+    function loop() {
+      var num = 0;
+
+      while (num < 1) {
+        num += 1;
+        console.log(num);
+      }
+
+    }
+
+    loop();
+  `;
+
+  useEffect(() => {
+    setMyInterpreter(getInterpreter(code));
+  }, [code]);
+
+  function handleClick(evt: MouseEvent<HTMLButtonElement>) {
+    const stack = myInterpreter.stateStack;
+
+    const last = stack.at(-1);
+    const { node, done_, value } = last;
+
+    console.log(last);
+
+    if (value?.data) console.log(value.data);
+
+    if (done_) {
+      return alert("DONE");
+    }
+
+    createSelection(node.start, node.end);
+
+    try {
+      myInterpreter.step();
+    } catch {
+      //
+    }
+  }
+
+  function createSelection(start: number, end: number) {
+    const field = document.getElementById("code") as HTMLTextAreaElement;
+    field.selectionStart = start;
+    field.selectionEnd = end;
+    field.focus();
+  }
+
+  return (
+    <>
+      <textarea
+        readOnly
+        id="code"
+        value={code}
+        style={{ width: "400px", height: "400px" }}
+      ></textarea>
+      <button onClick={handleClick}>Step</button>
+    </>
+  );
 }
 
 export default App;
